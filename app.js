@@ -21,11 +21,11 @@ const api = async (path, body, method) => {
   return r.json();
 };
 
-/* ---------- каталог: прайс Флавомаркета, стебли, букеты ---------- */
+/* ---------- каталог: прайс поставщика, стебли, букеты ---------- */
 const ALL = {}, BYKEY = {}, BYNAME = {};
 PRICE.forEach(r => {
   const it = { id: r.i, kind: "stem", name: r.n, len: r.l, from: r.o, brand: r.b, sec: r.s, cat: catOf(r.n), price: priceOf(r), base: r.w,
-    tone: toneOf(r.n), img: null, note: "", text: `Позиция из прайса Флавомаркета от ${PRICE_DATE}. Наличие и оттенок подтвердим при заказе.` };
+    tone: toneOf(r.n), img: null, note: "", text: `Позиция из прайса от ${PRICE_DATE}. Наличие и оттенок подтвердим при заказе.` };
   ALL[it.id] = it; BYKEY[r.n + "|" + (r.l || "")] = it; (BYNAME[r.n] = BYNAME[r.n] || []).push(it);
 });
 // длины в прайсе меняются день ото дня: если нужной нет, берём ту же позицию ближайшей длины
