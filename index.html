@@ -44,7 +44,7 @@
   <section class="tiles-wrap">
     <div class="tiles">
       <button class="tile" data-go="bouquets"><img src="img/vb-signature-t.jpg" alt=""><span><b>Готовые букеты</b><small id="tile-bq-n">фирменные</small></span></button>
-      <button class="tile" data-go="make"><img src="img/vm-pink-M-t.jpg" alt=""><span><b>Собрать свой</b><small>палитра и размер</small></span></button>
+      <button class="tile" data-go="make"><img src="img/vm-pink-M-t.jpg" alt=""><span><b>Собрать свой</b><small>цветок, размер, дополнения</small></span></button>
       <button class="tile" data-sub><img src="img/vm-white-M-t.jpg" alt=""><span><b>Подписка</b><small>букет по графику, −10%</small></span></button>
       <button class="tile" data-go="stems"><img src="img/v-pionikiss-t.jpg" alt=""><span><b>Стебли поштучно</b><small>и весь прайс</small></span></button>
     </div>
@@ -58,13 +58,18 @@
   </section>
 
   <section class="maker" id="make" data-chip>
-    <div class="mk-img"><img id="mk-img" src="" alt=""></div>
+    <div class="mk-img"><img id="mk-img" src="" alt=""><div class="rec" id="mk-rec"></div></div>
     <div class="mk-in">
       <p class="kick" id="mk-kick">Собрать свой</p>
       <h2 id="mk-name"></h2>
       <p class="compo" id="mk-compo"></p>
       <div class="mode" id="mk-mode"><button data-m="once" class="on">Один раз</button><button data-m="sub">По подписке <small>−10%</small></button></div>
-      <div class="seg pals" id="mk-pals"></div>
+      <div class="mk-lb"><span>Главный цветок</span></div>
+      <div class="seg cats" id="mk-cats"></div>
+      <div class="rail mini" id="mk-main"></div>
+      <div class="mk-lb"><span>Дополнить</span><small>до двух, можно без них</small></div>
+      <div class="acc" id="mk-acc"></div>
+      <div class="mk-lb"><span>Размер</span><div class="st sm"><button id="mk-minus" aria-label="Меньше"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><output id="mk-n"></output><button id="mk-plus" aria-label="Больше"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
       <div class="seg sizes" id="mk-sizes"></div>
       <div class="seg plans" id="mk-plans"></div>
       <div class="row"><b><span id="mk-price"></span> <s id="mk-was"></s></b><button class="btn sm" id="mk-add">В корзину</button></div>

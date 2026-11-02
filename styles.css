@@ -105,6 +105,7 @@ h1 em,h2 em{font-style:italic;color:var(--gold)}
 .mk-img img{width:100%;height:100%;object-fit:cover;object-position:50% 25%;transition:transform .3s var(--ease),opacity .16s;transform-origin:50% 100%}
 .mk-img img.fade{opacity:0}
 .mk-in{padding:18px var(--pad) 0}
+.maker h2{font-size:31px}
 .mode{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:99px;background:var(--bg2);margin-top:16px}
 .mode button{height:40px;border-radius:99px;font:700 13px Manrope;color:var(--mut);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
 .mode button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(21,33,28,.08)}
@@ -123,6 +124,36 @@ h1 em,h2 em{font-style:italic;color:var(--gold)}
 .seg.plans{margin-top:10px;display:none}
 .maker.sub .seg.plans{display:flex}
 .seg.plans button{flex:1;justify-content:center;padding:0 8px;font-size:12px}
+.mk-lb{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:20px;font:700 11px/1 Manrope;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.mk-lb small{font:600 11px Manrope;letter-spacing:0;text-transform:none;color:var(--mut2)}
+.seg.cats{gap:6px;flex-wrap:nowrap;margin-top:10px;overflow-x:auto;scrollbar-width:none;margin-left:calc(-1 * var(--pad));margin-right:calc(-1 * var(--pad));padding:0 var(--pad)}
+.seg.cats::-webkit-scrollbar{display:none}
+.seg.cats button{height:32px;padding:0 12px;font-size:11.5px;flex:none}
+/* на фото: состав букета кружками с числом стеблей */
+.mk-img{position:relative}
+.mk-img img{transform-origin:50% 58%}
+.rec{position:absolute;left:var(--pad);bottom:14px;display:flex;gap:6px;z-index:2}
+.rec span{display:flex;align-items:center;gap:6px;height:34px;padding:2px 10px 2px 2px;border-radius:99px;background:rgba(255,253,249,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font:800 12px Manrope;color:var(--ink)}
+.rec img,.rec .sw{width:30px;height:30px;border-radius:50%;object-fit:cover;padding:0}
+.rec .sw i{display:none}
+.rail.mini{padding:12px var(--pad) 4px;gap:8px}
+.mc{flex:none;width:92px;text-align:left;transition:transform .2s var(--ease)}
+.mc:active{transform:scale(.96)}
+.mc .ph{aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:var(--bg2);border:2px solid transparent;transition:border-color .2s}
+.mc.on .ph{border-color:var(--green)}
+.mc img{width:100%;height:100%;object-fit:cover}
+.mc .nm{font:500 14px/1.1 'Cormorant Garamond',Georgia,serif;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc .pr{font:700 11px Manrope;color:var(--mut2);margin-top:2px}
+.acc{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.acc button{display:flex;align-items:center;gap:8px;height:42px;padding:0 13px 0 5px;border-radius:99px;border:1px solid var(--line);background:var(--card);font:700 12px Manrope;color:var(--mut);transition:all .2s}
+.acc button img,.acc button .sw{width:32px;height:32px;border-radius:50%;object-fit:cover;flex:none;padding:0}
+.acc button .sw i{display:none}
+.acc button.on{background:var(--green);color:var(--on);border-color:var(--green)}
+.st.sm{height:34px}
+.st.sm button{width:34px;height:34px}
+.st.sm button svg{width:13px;height:13px}
+.st.sm output{min-width:92px;font:700 12px Manrope}
+.seg.sizes{margin-top:12px}
 .maker .row{margin-top:18px}
 .maker .row b s{display:none;font:500 15px Manrope;color:var(--mut2);text-decoration:line-through;margin-left:8px}
 .maker.sub .row b s{display:inline}

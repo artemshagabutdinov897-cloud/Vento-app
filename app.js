@@ -33,10 +33,12 @@ const resolve = key => { const [nm, ln] = key.split("|"); return BYKEY[key] || (
 COLLECTION.forEach(c => {
   const it = resolve(c.key);
   if (!it) { console.warn("нет в прайсе:", c.key); return; }
-  Object.assign(it, { cat: c.cat, img: c.img || null, tone: c.tone || it.tone, text: c.text, note: c.note || "", name: c.name || it.name, shown: true });
+  Object.assign(it, { cat: c.cat, img: c.img || null, tone: c.tone || it.tone, text: c.text, note: c.note || "", name: c.name || it.name, shown: true, bq: MAKER_PHOTO[c.key] || null });
 });
 const GENUS = ["Эустома", "Лимониум", "Маттиола", "Дельфиниум", "Шамелациум", "Скимия", "Хлопок", "Амариллис", "Хризантема", "Гвоздика", "Калла", "Лилия", "Тюльпан", "Протея", "Цимбидиум", "Антиринум"];
-const shortName = it => { const n = it.name; for (const g of GENUS) if (n.startsWith(g)) return g.toLowerCase(); if (n.startsWith("Пион ")) return "пион " + n.slice(5); return n.replace(/^Роза куст /, "куст. ").replace(/^Роза Роза /, "").replace(/^Роза /, ""); };
+// короткое имя для составов: род (эустома, лимониум), у эустомы ещё цвет, у роз сорт без слова «Роза»
+const COLOR = [[/Вайт|Уайт/, "белая"], [/Пинк/, "розовая"], [/Лаванд/, "лавандовая"], [/Блу/, "синяя"], [/Грин|Эмеральд/, "зелёная"]];
+const shortName = it => { const n = it.name; for (const g of GENUS) if (n.startsWith(g)) { const c = g === "Эустома" ? COLOR.find(([re]) => re.test(n)) : null; return g.toLowerCase() + (c ? " " + c[1] : ""); } if (n.startsWith("Пион ")) return "пион " + n.slice(5); return n.replace(/^Роза куст /, "куст. ").replace(/^Роза Роза /, "").replace(/^Роза /, ""); };
 BOUQUETS.forEach(b => {
   b.kind = "bouquet";
   const ps = b.parts.map(([k, q]) => ({ it: resolve(k), q })).filter(p => p.it);
@@ -181,15 +183,34 @@ function renderPicks() {
   box.classList.add("on");
 }
 
-/* ---------- конфигуратор «Собрать свой»: один раз или по подписке ---------- */
-const mk = { pal: "pink", size: "M", plan: "14", mode: "once" };
-function calc(palId, sizeId) {
-  const pal = PALETTES.find(p => p.id === palId), sz = SIZES.find(s => s.id === sizeId);
-  const stems = pal.stems.map(([k, r]) => ({ it: resolve(k), r })).filter(s => s.it);
-  const counts = stems.map(s => Math.max(1, Math.round(sz.n * s.r)));
-  counts[0] += sz.n - counts.reduce((a, b) => a + b, 0);
-  const sum = stems.reduce((a, s, i) => a + s.it.price * counts[i], 0);
-  return { pal, sz, stems, counts, price: ceil100(sum + WORK(sz.n)), compo: stems.map((s, i) => `${counts[i]} ${shortName(s.it)}`).join(" · "), img: `vm-${pal.id}-${sz.id}` };
+/* ---------- конструктор «Собрать свой»: главный цветок, до двух дополнений, число стеблей; один раз или по подписке ---------- */
+const MAIN_CATS = ["roses", "garden", "exotic"];
+const MAIN = () => Object.values(ALL).filter(it => it.shown && MAIN_CATS.includes(it.cat));
+const ACC = ACCENTS.map(resolve).filter(Boolean);
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const mk = { main: (resolve("Роза Пионикисс|60") || MAIN()[0]).id, acc: [resolve("Эустома Алиша Пур Вайт|70")].filter(Boolean).map(it => it.id), n: 15, cat: "roses", plan: "14", mode: "once" };
+// фото подбирается по тону главного цветка (палитра) и числу стеблей (размер)
+function palOf(it) {
+  const h = (it.tone || "#ffffff").replace("#", ""), r = parseInt(h.slice(0, 2), 16) / 255, g = parseInt(h.slice(2, 4), 16) / 255, b = parseInt(h.slice(4, 6), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, sat = mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1));
+  let hue = 0; if (mx !== mn) { hue = mx === r ? (g - b) / (mx - mn) + (g < b ? 6 : 0) : mx === g ? (b - r) / (mx - mn) + 2 : (r - g) / (mx - mn) + 4; hue *= 60; }
+  if (sat < .18 || l > .9) return "white";
+  if (hue >= 200 && hue < 320) return "lavender";
+  if (hue >= 320 || hue < 8) return "pink";
+  return "coral";
+}
+const sizeOf = n => n <= 11 ? "S" : n <= 19 ? "M" : n <= 35 ? "L" : "XL";
+const ZOOM = { S: 1, M: 1.08, L: 1.17, XL: 1.28 };   // одно фото, но чем больше букет, тем ближе кадр
+// главный цветок получает 60% стеблей, если есть дополнения, иначе все
+function build(st) {
+  st = st || mk;
+  const main = item(st.main) || MAIN()[0], accs = st.acc.map(item).filter(Boolean), n = st.n;
+  const counts = accs.map(() => Math.max(1, Math.round(n * .4 / accs.length)));
+  const stems = [{ it: main, q: Math.max(1, n - counts.reduce((a, b) => a + b, 0)) }, ...accs.map((it, i) => ({ it, q: counts[i] }))];
+  const sum = stems.reduce((a, s) => a + s.it.price * s.q, 0), pal = palOf(main);
+  return { main, accs, stems, n, pal, price: ceil100(sum + WORK(n)), compo: stems.map(s => `${s.q} ${shortName(s.it)}`).join(" · "),
+    title: cap(shortName(main)) + accs.map(a => " + " + shortName(a)).join(""), h: main.len ? `около ${Math.max(30, main.len - 10)} см` : "",
+    img: main.bq || PAL_PHOTO[pal], fallback: PAL_PHOTO[pal], sz: sizeOf(n), key: main.id + accs.map(a => "+" + a.id).join("") };
 }
 function setPic(im, src, fallback) {
   if (im.dataset.src === src) return;
@@ -197,39 +218,56 @@ function setPic(im, src, fallback) {
   setTimeout(() => { im.onerror = () => { im.onerror = null; im.src = `img/${fallback}.jpg`; }; im.src = `img/${src}.jpg`; im.classList.remove("fade"); }, 160);
 }
 function renderMaker(animate) {
-  const c = calc(mk.pal, mk.size), sub = mk.mode === "sub", plan = SUB_PLANS.find(p => p.id === mk.plan);
+  const c = build(), sub = mk.mode === "sub", plan = SUB_PLANS.find(p => p.id === mk.plan);
   const price = sub ? ceil100(c.price * (1 - SUB_DISCOUNT)) : c.price;
   $("#make").classList.toggle("sub", sub);
   $$("#mk-mode button").forEach(b => b.classList.toggle("on", b.dataset.m === mk.mode));
-  setPic($("#mk-img"), c.img, c.pal.img);
-  $("#mk-pals").innerHTML = PALETTES.map(p => `<button data-p="${p.id}" class="${p.id === mk.pal ? "on" : ""}"><i style="background:${p.tone}"></i>${p.name}</button>`).join("");
-  $("#mk-sizes").innerHTML = SIZES.map(s => `<button data-s="${s.id}" class="${s.id === mk.size ? "on" : ""}"><b>${s.id}</b><span>${plural(s.n, "стебель", "стебля", "стеблей")}</span></button>`).join("");
+  setPic($("#mk-img"), c.img, c.fallback);
+  $("#mk-img").style.transform = `scale(${ZOOM[c.sz]})`;
+  $("#mk-rec").innerHTML = c.stems.map(s => `<span>${pic(s.it, true)}<b>${s.q}</b></span>`).join("");
+  $("#mk-cats").innerHTML = MAIN_CATS.map(k => `<button data-c="${k}" class="${k === mk.cat ? "on" : ""}">${CATS[k].title}</button>`).join("");
+  $("#mk-main").innerHTML = MAIN().filter(it => it.cat === mk.cat).map(it => `<button class="mc ${it.id === mk.main ? "on" : ""}" data-m="${it.id}"><div class="ph">${pic(it, true)}</div><div class="nm">${cap(shortName(it))}</div><div class="pr">${fmt(it.price)}</div></button>`).join("");
+  $("#mk-acc").innerHTML = ACC.map(it => `<button data-a="${it.id}" class="${mk.acc.includes(it.id) ? "on" : ""}">${pic(it, true)}${cap(shortName(it))}</button>`).join("");
+  $("#mk-sizes").innerHTML = SIZES.map(s => `<button data-s="${s.n}" class="${s.n === mk.n ? "on" : ""}"><b>${s.id}</b><span>${plural(s.n, "стебель", "стебля", "стеблей")}</span></button>`).join("");
+  $("#mk-n").textContent = plural(mk.n, "стебель", "стебля", "стеблей");
   $("#mk-plans").innerHTML = SUB_PLANS.map(p => `<button data-pl="${p.id}" class="${p.id === mk.plan ? "on" : ""}">${p.name}</button>`).join("");
-  $$("#mk-pals button").forEach(b => b.addEventListener("click", () => { mk.pal = b.dataset.p; hap(); renderMaker(true); }));
-  $$("#mk-sizes button").forEach(b => b.addEventListener("click", () => { mk.size = b.dataset.s; hap(); renderMaker(true); }));
+  $$("#mk-cats button").forEach(b => b.addEventListener("click", () => { mk.cat = b.dataset.c; hap(); renderMaker(); }));
+  $$("#mk-main .mc").forEach(b => b.addEventListener("click", () => { mk.main = b.dataset.m; mk.acc = mk.acc.filter(a => a !== mk.main); hap(); renderMaker(true); }));
+  $$("#mk-acc button").forEach(b => b.addEventListener("click", () => {
+    const id = b.dataset.a;
+    if (mk.acc.includes(id)) mk.acc = mk.acc.filter(a => a !== id);
+    else if (id === mk.main) { toast("Это главный цветок"); return; }
+    else if (mk.acc.length >= 2) { toast("Не больше двух дополнений"); return; }
+    else mk.acc = [...mk.acc, id];
+    hap(); renderMaker(true);
+  }));
+  $$("#mk-sizes button").forEach(b => b.addEventListener("click", () => { mk.n = +b.dataset.s; hap(); renderMaker(true); }));
   $$("#mk-plans button").forEach(b => b.addEventListener("click", () => { mk.plan = b.dataset.pl; hap(); renderMaker(true); }));
+  const sel = $("#mk-main .mc.on"); if (sel) $("#mk-main").scrollTo({ left: Math.max(0, sel.offsetLeft - 20), behavior: animate ? "smooth" : "auto" });
   $("#mk-kick").textContent = sub ? `Подписка · −${SUB_DISCOUNT * 100}% к цене букета` : "Собрать свой";
-  $("#mk-name").textContent = `Букет «${c.pal.name}» ${c.sz.id}`;
-  $("#mk-compo").textContent = `${c.compo} · ${sub ? plan.name.toLowerCase() : c.sz.h}`;
+  $("#mk-name").textContent = c.title;
+  $("#mk-compo").textContent = [c.compo, c.h, sub ? plan.name.toLowerCase() : ""].filter(Boolean).join(" · ");
   $("#mk-was").textContent = fmt(c.price);
   $("#mk-add").textContent = sub ? "Оформить подписку" : "В корзину";
   $("#mk-hint").textContent = sub ? "Цена за каждую доставку. Первую выберите при оформлении, дальше привозим по графику и накануне спрашиваем, всё ли в силе." : "Цена считается по сегодняшнему прайсу. Состав и оттенок подтвердит флорист.";
   animate ? countTo($("#mk-price"), price) : ($("#mk-price").textContent = fmt(price), $("#mk-price").dataset.v = price);
 }
+$("#mk-minus").addEventListener("click", () => { if (mk.n > 5) { mk.n = Math.max(5, mk.n - 2); hap(); renderMaker(true); } });
+$("#mk-plus").addEventListener("click", () => { if (mk.n < 101) { mk.n = Math.min(101, mk.n + 2); hap(); renderMaker(true); } });
 $("#mk-add").addEventListener("click", () => {
-  const c = calc(mk.pal, mk.size);
+  const c = build();
   if (mk.mode === "sub") {
     const plan = SUB_PLANS.find(p => p.id === mk.plan), price = ceil100(c.price * (1 - SUB_DISCOUNT));
-    const id = `SUB-${c.pal.id}-${c.sz.id}-${plan.id}`;
-    CUSTOM[id] = { id, kind: "custom", name: `Подписка «${c.pal.name}» ${c.sz.id}`, sub: `${plan.name}: ${c.compo}`, price, img: c.img, fallback: c.pal.img, tone: c.pal.tone, compo: c.compo, n: c.sz.n, every: plan.days,
+    const id = `SUB-${plan.id}-${c.n}-${c.key}`;
+    CUSTOM[id] = { id, kind: "custom", name: `Подписка «${c.title}» ${c.n}`, sub: `${plan.name}: ${c.compo}`, price, img: c.img, fallback: c.fallback, tone: c.main.tone, compo: c.compo, n: c.n, every: plan.days,
       text: `Букет ${plan.name.toLowerCase()}: ${c.compo}. Первую доставку выберите при оформлении, дальше привозим по графику, напоминаем накануне.` };
     Object.keys(cart).forEach(k => { if (k.startsWith("SUB-")) delete cart[k]; });
     setQty(id, 1); hap("ok"); toast("Подписка в корзине"); show("cart");
     return;
   }
-  const id = `M-${c.pal.id}-${c.sz.id}`;
-  CUSTOM[id] = { id, kind: "custom", name: `Букет «${c.pal.name}» ${c.sz.id}`, sub: `${plural(c.sz.n, "стебель", "стебля", "стеблей")}: ${c.compo}`, price: c.price, img: c.img, fallback: c.pal.img, tone: c.pal.tone, compo: c.compo, n: c.sz.n,
-    text: `Собран под вас: ${c.compo}. Высота ${c.sz.h}. Наличие и оттенок подтвердим при заказе.` };
+  const id = `M-${c.n}-${c.key}`;
+  CUSTOM[id] = { id, kind: "custom", name: `Букет «${c.title}» ${c.n}`, sub: `${plural(c.n, "стебель", "стебля", "стеблей")}: ${c.compo}`, price: c.price, img: c.img, fallback: c.fallback, tone: c.main.tone, compo: c.compo, n: c.n,
+    text: `Собран под вас: ${c.compo}.${c.h ? " Высота " + c.h + "." : ""} Наличие и оттенок подтвердим при заказе.` };
   setQty(id, (cart[id] || 0) + 1); hap("ok"); toast("Букет в корзине");
 });
 
@@ -246,6 +284,15 @@ function renderPrice() {
 }
 $("#q").addEventListener("input", () => { pq = $("#q").value; clearTimeout(pt); pt = setTimeout(renderPrice, 90); });
 
+// состав по палитре и размеру: нужен только для повтора старых заказов «M-<палитра>-<размер>»
+function calc(palId, sizeId) {
+  const pal = PALETTES.find(p => p.id === palId), sz = SIZES.find(s => s.id === sizeId);
+  const stems = pal.stems.map(([k, r]) => ({ it: resolve(k), r })).filter(s => s.it);
+  const counts = stems.map(s => Math.max(1, Math.round(sz.n * s.r)));
+  counts[0] += sz.n - counts.reduce((a, b) => a + b, 0);
+  const sum = stems.reduce((a, s, i) => a + s.it.price * counts[i], 0);
+  return { pal, sz, stems, counts, price: ceil100(sum + WORK(sz.n)), compo: stems.map((s, i) => `${counts[i]} ${shortName(s.it)}`).join(" · "), img: `vm-${pal.id}-${sz.id}` };
+}
 /* ---------- мои заказы и повтор ---------- */
 const STATUS = { new: "принят", making: "собираем", way: "курьер выехал", done: "доставлен" };
 async function renderOrders() {
@@ -263,7 +310,12 @@ function repeatOrder(o) {
   let missed = 0;
   o.items.forEach(i => {
     if (item(i.id)) { cart[i.id] = (cart[i.id] || 0) + i.qty; return; }
-    if (i.id.startsWith("M-") || i.id.startsWith("SUB-")) { const [, pal, size, plan] = i.id.split("-"); if (PALETTES.find(p => p.id === pal) && SIZES.find(s => s.id === size)) { const c = calc(pal, size); CUSTOM[i.id] = { id: i.id, kind: "custom", name: i.name.split(" (")[0], sub: c.compo, price: plan ? ceil100(c.price * (1 - SUB_DISCOUNT)) : c.price, img: c.img, fallback: c.pal.img, tone: c.pal.tone, compo: c.compo, n: c.sz.n, every: plan ? +plan : undefined, text: "Повтор заказа по сегодняшнему прайсу." }; cart[i.id] = (cart[i.id] || 0) + i.qty; return; } }
+    // букет из конструктора: «M-<стеблей>-<главный+дополнения>» или «SUB-<дней>-<стеблей>-<состав>»; старый вид «M-<палитра>-<размер>»
+    const m = i.id.match(/^(M|SUB)-(?:(\d+)-)?(\d+)-([A-Za-z0-9+]+)$/);
+    if (m) {
+      const [main, ...acc] = m[4].split("+"), every = m[1] === "SUB" ? +m[2] : undefined;
+      if (item(main) && acc.every(item)) { const c = build({ main, acc, n: +m[3] }); CUSTOM[i.id] = { id: i.id, kind: "custom", name: i.name.split(" (")[0], sub: c.compo, price: every ? ceil100(c.price * (1 - SUB_DISCOUNT)) : c.price, img: c.img, fallback: c.fallback, tone: c.main.tone, compo: c.compo, n: c.n, every, text: "Повтор заказа по сегодняшнему прайсу." }; cart[i.id] = (cart[i.id] || 0) + i.qty; return; }
+    } else if (i.id.startsWith("M-") || i.id.startsWith("SUB-")) { const [, pal, size, plan] = i.id.split("-"); if (PALETTES.find(p => p.id === pal) && SIZES.find(s => s.id === size)) { const c = calc(pal, size); CUSTOM[i.id] = { id: i.id, kind: "custom", name: i.name.split(" (")[0], sub: c.compo, price: plan ? ceil100(c.price * (1 - SUB_DISCOUNT)) : c.price, img: c.img, fallback: c.pal.img, tone: c.pal.tone, compo: c.compo, n: c.sz.n, every: plan ? +plan : undefined, text: "Повтор заказа по сегодняшнему прайсу." }; cart[i.id] = (cart[i.id] || 0) + i.qty; return; } }
     missed++;
   });
   persist(); setQty("", 0); hap("ok");
