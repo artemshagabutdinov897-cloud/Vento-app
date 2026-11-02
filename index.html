@@ -29,49 +29,57 @@
     <div class="tx">
       <p class="kick rise d1">Москва · доставка в день заказа</p>
       <h1 class="rise d2">Цветы, которые<br><em>говорят за тебя</em></h1>
-      <button class="btn rise d3" data-go="occasion">Выбрать букет <svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
     </div>
-    <div class="scroll-hint"></div>
   </section>
 
-  <section class="occasion" id="occasion">
-    <p class="kick">С чего начнём</p>
+  <nav class="chips" id="chips">
+    <button data-go="bouquets" class="on">Букеты</button>
+    <button data-go="make">Собрать свой</button>
+    <button data-sub>Подписка</button>
+    <button data-go="stems">Стебли</button>
+    <button data-go="occasion">Повод</button>
+    <button data-view="price">Весь прайс</button>
+  </nav>
+
+  <section class="tiles-wrap">
+    <div class="tiles">
+      <button class="tile" data-go="bouquets"><img src="img/vb-signature-t.jpg" alt=""><span><b>Готовые букеты</b><small>8 фирменных</small></span></button>
+      <button class="tile" data-go="make"><img src="img/vm-pink-M-t.jpg" alt=""><span><b>Собрать свой</b><small>палитра и размер</small></span></button>
+      <button class="tile" data-sub><img src="img/vm-white-M-t.jpg" alt=""><span><b>Подписка</b><small>букет по графику, −10%</small></span></button>
+      <button class="tile" data-go="stems"><img src="img/v-pionikiss-t.jpg" alt=""><span><b>Стебли поштучно</b><small>и весь прайс</small></span></button>
+    </div>
+  </section>
+
+  <section id="bouquets" data-chip>
+    <p class="kick">Собрано для вас</p>
+    <h2>Фирменные букеты</h2>
+    <p class="lead">соберём и привезём в выбранный слот</p>
+    <div class="rail" id="rail-b"></div>
+  </section>
+
+  <section class="maker" id="make" data-chip>
+    <div class="mk-img"><img id="mk-img" src="" alt=""></div>
+    <div class="mk-in">
+      <p class="kick" id="mk-kick">Собрать свой</p>
+      <h2 id="mk-name"></h2>
+      <p class="compo" id="mk-compo"></p>
+      <div class="mode" id="mk-mode"><button data-m="once" class="on">Один раз</button><button data-m="sub">По подписке <small>−10%</small></button></div>
+      <div class="seg pals" id="mk-pals"></div>
+      <div class="seg sizes" id="mk-sizes"></div>
+      <div class="seg plans" id="mk-plans"></div>
+      <div class="row"><b><span id="mk-price"></span> <s id="mk-was"></s></b><button class="btn sm" id="mk-add">В корзину</button></div>
+      <p class="hint" id="mk-hint">Цена считается по сегодняшнему прайсу. Состав и оттенок подтвердит флорист.</p>
+    </div>
+  </section>
+
+  <section id="occasion" data-chip>
+    <p class="kick">Подсказка</p>
     <h2>Кому и по какому <em>поводу</em>?</h2>
     <div class="seg occ" id="occ"></div>
     <div class="picks" id="picks"></div>
-    <button class="btn ghost" data-go="slides">Смотреть все букеты</button>
   </section>
 
-  <div id="slides"></div>
-
-  <section class="maker" id="make">
-    <div class="mk-img"><img id="mk-img" src="" alt=""></div>
-    <div class="mk-in">
-      <p class="kick">Собрать свой</p>
-      <h2 id="mk-name"></h2>
-      <p class="compo" id="mk-compo"></p>
-      <div class="seg pals" id="mk-pals"></div>
-      <div class="seg sizes" id="mk-sizes"></div>
-      <div class="row"><b id="mk-price"></b><button class="btn sm" id="mk-add">В корзину</button></div>
-      <p class="hint">Цена считается по сегодняшнему прайсу. Состав и оттенок подтвердит флорист.</p>
-    </div>
-  </section>
-
-  <section class="maker subs" id="subscribe">
-    <div class="mk-img"><img id="sb-img" src="" alt=""></div>
-    <div class="mk-in">
-      <p class="kick">Подписка</p>
-      <h2>Свежий букет <em>по графику</em></h2>
-      <p class="compo" id="sb-compo"></p>
-      <div class="seg pals" id="sb-pals"></div>
-      <div class="seg sizes" id="sb-sizes"></div>
-      <div class="seg plans" id="sb-plans"></div>
-      <div class="row"><b><span id="sb-price"></span> <s id="sb-was"></s></b><button class="btn sm" id="sb-add">Оформить</button></div>
-      <p class="hint">Привозим по графику, пишем накануне: можно пропустить неделю или поменять палитру. Отменить можно в любой момент, написав флористу.</p>
-    </div>
-  </section>
-
-  <section id="stems">
+  <section id="stems" data-chip>
     <p class="kick">Поштучно</p>
     <h2>Стебли</h2>
     <p class="lead">добавьте к букету или соберите свой из любых</p>

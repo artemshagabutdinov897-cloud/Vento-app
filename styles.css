@@ -7,7 +7,6 @@
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
 }
 html{background:var(--bg)}
-html.snap{scroll-snap-type:y proximity}
 body{background:var(--bg);color:var(--ink);font:500 15px/1.45 Manrope,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;overscroll-behavior-y:none}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 input,textarea{font:inherit;color:inherit}
@@ -16,7 +15,8 @@ a{color:inherit;text-decoration:none}
 .view{display:none}.view.on{display:block;animation:vin .28s var(--ease)}
 @keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .kick{font:700 11px/1 Manrope;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
-h2{font:400 38px/1.02 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;margin:10px 0 6px}
+h2{font:400 36px/1.02 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;margin:10px 0 6px}
+h1 em,h2 em{font-style:italic;color:var(--gold)}
 .lead{color:var(--mut);font-size:14.5px}
 .compo{font:italic 500 17px/1.35 'Cormorant Garamond',Georgia,serif;color:var(--mut);margin-top:6px}
 .hint{color:var(--mut2);font-size:12.5px;margin-top:10px;line-height:1.45}
@@ -43,40 +43,41 @@ h2{font:400 38px/1.02 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;m
 .ic-btn svg{width:19px;height:19px;stroke:var(--ink);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .ic-btn i{position:absolute;top:-4px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--green);color:var(--on);font:800 11px/19px Manrope;font-style:normal;text-align:center;display:none}
 .ic-btn i.on{display:block;animation:pop .25s var(--ease)}
+.tb-r{display:flex;gap:8px}
 
-/* ---------- экраны: герой и букеты ---------- */
-.hero,.slide{position:relative;height:100vh;height:100svh;height:var(--tg-viewport-stable-height,100svh);min-height:560px;overflow:hidden;scroll-snap-align:start;background:var(--bg2)}
-.hero .im,.slide .im{position:absolute;inset:-1px;will-change:transform}
-.hero .im img,.slide .im img{width:100%;height:100%;object-fit:cover;object-position:50% 30%}
-.hero .im img{transform:scale(1.1);animation:kb 16s var(--ease) forwards}
+/* ---------- первый экран: обычная прокрутка, без привязки к экранам ---------- */
+.hero{position:relative;height:62vh;height:min(calc(var(--tg-viewport-stable-height,100svh) * .62),620px);min-height:430px;overflow:hidden;background:var(--bg2);margin:0;padding:0}
+.hero .im{position:absolute;inset:-1px;will-change:transform}
+.hero .im img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;transform:scale(1.1);animation:kb 16s var(--ease) forwards}
 @keyframes kb{to{transform:scale(1)}}
-.slide .im img{transform:scale(1.06);transition:transform .5s var(--ease)}
-.slide.in .im img{transform:none}
-.hero .ov,.slide .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(245,241,233,.55) 0%,rgba(245,241,233,0) 22%,rgba(245,241,233,0) 46%,rgba(245,241,233,.7) 72%,rgba(245,241,233,.98) 100%)}
-.hero .tx,.slide .tx{position:absolute;left:var(--pad);right:var(--pad);bottom:calc(var(--sab) + 64px);z-index:2}
-.hero .tx .kick,.slide .tx .kick{color:rgba(21,33,28,.72)}
-.hero h1{font:400 52px/.98 'Cormorant Garamond',Georgia,serif;letter-spacing:-.015em;margin:12px 0 22px}
-.hero h1 em,.slide h2 em{font-style:italic;color:var(--gold)}
-.slide .tx .kick,.slide .tx h2,.slide .tx .compo,.slide .tx .row{opacity:0;transform:translateY(14px);transition:opacity .3s var(--ease),transform .3s var(--ease)}
-.slide.in .tx .kick,.slide.in .tx h2,.slide.in .tx .compo,.slide.in .tx .row{opacity:1;transform:none}
-.slide.in .tx h2{transition-delay:.06s}.slide.in .tx .compo{transition-delay:.12s}.slide.in .tx .row{transition-delay:.18s}
-.slide h2{font-size:44px}
+.hero .im video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;opacity:0;transition:opacity .6s}
+.hero .im video.on{opacity:1}
+.hero .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(245,241,233,.55) 0%,rgba(245,241,233,0) 22%,rgba(245,241,233,0) 46%,rgba(245,241,233,.7) 72%,rgba(245,241,233,.98) 100%)}
+.hero .tx{position:absolute;left:var(--pad);right:var(--pad);bottom:22px;z-index:2}
+.hero .tx .kick{color:rgba(21,33,28,.72)}
+.hero h1{font:400 46px/.98 'Cormorant Garamond',Georgia,serif;letter-spacing:-.015em;margin:12px 0 0}
 .row{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:16px}
 .row b{font:400 30px/1 'Cormorant Garamond',Georgia,serif;font-variant-numeric:tabular-nums}
 .rise{animation:rise .3s var(--ease) backwards}
 .rise.d1{animation-delay:.1s}.rise.d2{animation-delay:.18s}.rise.d3{animation-delay:.26s}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.scroll-hint{position:absolute;left:50%;bottom:calc(var(--sab) + 16px);width:1px;height:26px;background:linear-gradient(var(--ink),transparent);z-index:2;animation:hint 1.6s ease-in-out infinite}
-@keyframes hint{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(6px);opacity:.15}}
 
-.hero .im video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;opacity:0;transition:opacity .6s}
-.hero .im video.on{opacity:1}
-.tb-r{display:flex;gap:8px}
+/* ---------- навигация: липкая строка разделов и четыре плитки ---------- */
+.chips{position:sticky;top:calc(var(--sat) + 64px);z-index:25;display:flex;gap:6px;overflow-x:auto;padding:10px var(--pad);background:rgba(245,241,233,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--line);font:700 12.5px Manrope;color:var(--mut);background:var(--card);transition:all .2s}
+.chips button.on{background:var(--green);color:var(--on);border-color:var(--green)}
+.tiles-wrap{margin-top:10px;padding:0 var(--pad)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{position:relative;height:126px;border-radius:20px;overflow:hidden;background:var(--bg2);text-align:left;transition:transform .2s var(--ease)}
+.tile:active{transform:scale(.97)}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.tile span{position:absolute;left:0;right:0;bottom:0;padding:36px 14px 12px;background:linear-gradient(180deg,rgba(245,241,233,0),rgba(245,241,233,.94) 55%)}
+.tile b{display:block;font:500 19px/1.05 'Cormorant Garamond',Georgia,serif}
+.tile small{display:block;font:600 11px Manrope;color:var(--mut);margin-top:3px}
+[data-chip]{scroll-margin-top:calc(var(--sat) + 126px)}
 
 /* ---------- повод и подсказки ---------- */
-.occasion{scroll-snap-align:start;padding-top:56px;min-height:60vh}
-.occasion h2{font-size:40px}
-.occasion h2 em{font-style:italic;color:var(--gold)}
 .seg.occ{margin-top:18px}
 .seg.occ button{height:42px;padding:0 16px}
 .picks{display:none;margin-top:22px}
@@ -88,41 +89,43 @@ h2{font:400 38px/1.02 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;m
 .pk img{width:100%;height:100%;object-fit:cover;object-position:50% 25%}
 .pk .nm{font:500 16px/1.1 'Cormorant Garamond',Georgia,serif;margin-top:8px}
 .pk .pr{font:700 12.5px Manrope;margin-top:3px}
-.occasion .btn.ghost{margin-top:22px}
 
 /* ---------- кнопки ---------- */
 .btn{height:54px;width:100%;border-radius:99px;background:var(--green);color:var(--on);font:700 15px Manrope;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .2s var(--ease),opacity .2s;margin-top:16px}
 .btn:active{transform:scale(.98)}
 .btn svg{width:16px;height:16px;stroke:var(--on);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .btn.sm{width:auto;height:48px;padding:0 22px;margin:0;flex:none}
-.hero .btn{width:auto;display:inline-flex;padding:0 24px;margin:0}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .btn.ghost svg{stroke:var(--ink)}
 .btn[disabled]{opacity:.45;pointer-events:none}
 
-/* ---------- конфигуратор ---------- */
-.maker{scroll-snap-align:start;padding:0 0 10px;background:var(--bg)}
-.mk-img{height:58vh;min-height:360px;margin-top:calc(var(--sat) + 62px);overflow:hidden;display:grid;place-items:end center;background:var(--bg2)}
+/* ---------- конфигуратор: один раз или по подписке ---------- */
+.maker{padding:0 0 10px;background:var(--bg)}
+.mk-img{height:52vh;height:min(52vh,460px);min-height:320px;overflow:hidden;background:var(--bg2)}
 .mk-img img{width:100%;height:100%;object-fit:cover;object-position:50% 25%;transition:transform .3s var(--ease),opacity .16s;transform-origin:50% 100%}
 .mk-img img.fade{opacity:0}
 .mk-in{padding:18px var(--pad) 0}
+.mode{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:99px;background:var(--bg2);margin-top:16px}
+.mode button{height:40px;border-radius:99px;font:700 13px Manrope;color:var(--mut);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
+.mode button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(21,33,28,.08)}
+.mode button small{font:700 11px Manrope;color:var(--gold)}
 .seg{display:flex;gap:8px;flex-wrap:wrap}
 .seg button{height:40px;padding:0 14px;border-radius:99px;border:1px solid var(--line);font:700 12.5px Manrope;color:var(--mut);background:var(--card);transition:all .2s;display:flex;align-items:center;gap:8px}
 .seg button.on{background:var(--green);color:var(--on);border-color:var(--green)}
 .seg button small{font-weight:600;opacity:.6;margin-left:4px}
-.seg.pals{margin-top:16px;display:grid;grid-template-columns:1fr 1fr}
+.seg.pals{margin-top:14px;display:grid;grid-template-columns:1fr 1fr}
 .seg.pals button{justify-content:flex-start}
 .seg.pals i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.08);flex:none}
 .seg.sizes{margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr)}
 .seg.sizes button{height:auto;padding:9px 6px;border-radius:16px;flex-direction:column;gap:2px;line-height:1.1;justify-content:center}
 .seg.sizes button b{font:400 20px/1 'Cormorant Garamond',Georgia,serif}
 .seg.sizes button span{font:600 10.5px Manrope;opacity:.7}
-.maker .row{margin-top:18px}
-.subs{margin-top:28px;border-top:1px solid var(--line)}
-.subs h2 em{font-style:italic;color:var(--gold)}
-.seg.plans{margin-top:10px}
+.seg.plans{margin-top:10px;display:none}
+.maker.sub .seg.plans{display:flex}
 .seg.plans button{flex:1;justify-content:center;padding:0 8px;font-size:12px}
-.subs .row b s{font:500 15px Manrope;color:var(--mut2);text-decoration:line-through;margin-left:8px}
+.maker .row{margin-top:18px}
+.maker .row b s{display:none;font:500 15px Manrope;color:var(--mut2);text-decoration:line-through;margin-left:8px}
+.maker.sub .row b s{display:inline}
 
 /* ---------- открытка с подсказками, напоминание, мои заказы ---------- */
 .card-ai{margin-top:10px}
@@ -148,13 +151,22 @@ h2{font:400 38px/1.02 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;m
 .btn.sm.ghost{height:40px;font-size:13px}
 .done .btn + .btn{margin-top:10px}
 
-/* ---------- стебли поштучно ---------- */
-section{padding:0 var(--pad);margin-top:48px}
+/* ---------- разделы витрины, ленты букетов и стеблей ---------- */
+section{padding:0 var(--pad);margin-top:44px}
 section .kick{display:flex;align-items:center;gap:10px}
 section .kick::before{content:"";width:0;height:1px;background:var(--gold);transition:width .3s var(--ease)}
 section.seen .kick::before{width:22px}
-.rail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:16px var(--pad) 10px;margin:0 calc(-1 * var(--pad));scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rail{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-left:var(--pad);padding:16px var(--pad) 10px;margin:0 calc(-1 * var(--pad));scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .rail::-webkit-scrollbar{display:none}
+.bq{flex:none;width:76vw;max-width:330px;scroll-snap-align:start;text-align:left;transition:transform .2s var(--ease)}
+.bq:active{transform:scale(.98)}
+.bq .ph{aspect-ratio:4/5;border-radius:22px;overflow:hidden;background:var(--bg2)}
+.bq img{width:100%;height:100%;object-fit:cover;object-position:50% 25%}
+.bq .nm{font:400 26px/1.05 'Cormorant Garamond',Georgia,serif;margin-top:12px}
+.bq .compo{margin-top:4px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bq .pr{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+.bq .pr b{font:400 22px/1 'Cormorant Garamond',Georgia,serif;font-variant-numeric:tabular-nums}
+.bq .pr span{font:700 12px Manrope;color:var(--mut2)}
 .sc{flex:none;width:150px;scroll-snap-align:start;text-align:left;transition:transform .2s var(--ease)}
 .sc:active{transform:scale(.97)}
 .sc .ph{aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:var(--bg2)}
@@ -204,7 +216,8 @@ footer a{color:var(--mut)}
 .sheet-bg{position:absolute;inset:0;background:rgba(21,33,28,.45);opacity:0;transition:opacity .25s}
 .sheet-card{position:absolute;left:0;right:0;bottom:0;max-height:93%;overflow-y:auto;background:var(--bg);border-radius:28px 28px 0 0;transform:translateY(100%);transition:transform .3s var(--ease);padding-bottom:calc(var(--sab) + 18px);overscroll-behavior:contain}
 .sheet.on{pointer-events:auto}.sheet.on .sheet-bg{opacity:1}.sheet.on .sheet-card{transform:none}
-.sheet .ph{aspect-ratio:4/5;max-height:56vh;overflow:hidden;border-radius:28px 28px 0 0;position:relative;background:var(--bg2)}
+/* фото на всю ширину листа: высота задана явно, иначе max-height через aspect-ratio сужает блок */
+.sheet .ph{width:100%;height:56vh;height:min(56vh,118vw);overflow:hidden;border-radius:28px 28px 0 0;position:relative;background:var(--bg2)}
 .sheet .ph #sh-pic,.sheet .ph img{width:100%;height:100%;object-fit:cover;object-position:50% 30%}
 .sheet.on .ph #sh-pic{animation:zoom .3s var(--ease)}
 @keyframes zoom{from{transform:scale(1.06)}to{transform:none}}
@@ -227,6 +240,9 @@ footer a{color:var(--mut)}
 .presets button.on{background:var(--green);color:var(--on);border-color:var(--green)}
 .sum{display:flex;justify-content:space-between;align-items:baseline;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .sum span{color:var(--mut);font-size:13px}.sum b{font:400 30px/1 'Cormorant Garamond',Georgia,serif;font-variant-numeric:tabular-nums}
+/* в Telegram кнопку листа заменяет MainButton с суммой */
+html.tg .sheet #sh-add{display:none}
+html.tg .sheet-card{padding-bottom:calc(var(--sab) + 28px)}
 
 /* ---------- корзина и оформление ---------- */
 .lines{display:grid;gap:10px;margin-top:8px}
@@ -264,7 +280,7 @@ footer a{color:var(--mut)}
 .done p{color:var(--mut);margin-top:10px;line-height:1.55}
 .done .btn{max-width:320px;margin:26px auto 0}
 
-/* нижняя кнопка — только вне Telegram, в Telegram её заменяет MainButton */
+/* нижняя кнопка: только вне Telegram, в Telegram её заменяет MainButton */
 .bar{position:fixed;left:var(--pad);right:var(--pad);bottom:calc(var(--sab) + 16px);z-index:30;transform:translateY(140%);transition:transform .3s var(--ease)}
 .bar.on{transform:none}
 .bar .btn{margin:0;box-shadow:0 14px 34px rgba(21,33,28,.28)}

@@ -1,8 +1,9 @@
 /* Vento Flowers, мини-приложение. Цены в price.js, витрина в catalog.js, заказ уходит в api/ (bot.py).
-   Экран за экраном: повод → фирменные букеты → конфигуратор → подписка → стебли → весь прайс.
-   В Telegram корзину открывает MainButton, вне Telegram та же роль у нижней кнопки #bar. */
+   Одна длинная страница с обычной прокруткой: первый экран → липкие разделы и плитки → букеты лентой → конфигуратор (один раз или по подписке) → повод → стебли → весь прайс.
+   В Telegram корзину открывает MainButton (а в открытом листе товара он же добавляет позицию), вне Telegram та же роль у нижней кнопки #bar. */
 const tg = window.Telegram && Telegram.WebApp;
 const inTg = !!(tg && tg.initData);
+document.documentElement.classList.toggle("tg", inTg);
 const API = "api/";
 const BG = "#F5F1E9", INK = "#0E2B23";
 if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor(BG); tg.setBackgroundColor(BG); tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {} }
@@ -76,7 +77,6 @@ let view = "home";
 function show(name) {
   $$(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + name));
   view = name; window.scrollTo(0, 0);
-  document.documentElement.classList.toggle("snap", name === "home");
   $("#topbar").classList.toggle("hide", name !== "home");
   if (name === "cart") renderCart();
   if (name === "price") renderPrice();
@@ -87,7 +87,8 @@ function syncButtons() {
   const n = count(), sheetOpen = $("#sheet").classList.contains("on");
   if (inTg) {
     const mb = tg.MainButton;
-    if (view !== "cart" && view !== "done" && n > 0) mb.setParams({ text: "Корзина · " + n, color: INK, text_color: BG, is_visible: true, is_active: true });
+    if (sheetOpen && cur) mb.setParams({ text: (cart[cur.id] ? "Обновить · " : "В корзину · ") + fmt(cur.price * qty), color: INK, text_color: BG, is_visible: true, is_active: true });
+    else if (view !== "cart" && view !== "done" && n > 0) mb.setParams({ text: "Корзина · " + n, color: INK, text_color: BG, is_visible: true, is_active: true });
     else if (view === "cart" && n > 0) mb.setParams({ text: "Подтвердить заказ", color: INK, text_color: BG, is_visible: true, is_active: true });
     else mb.hide();
     view === "home" && !sheetOpen ? tg.BackButton.hide() : tg.BackButton.show();
@@ -96,7 +97,7 @@ function syncButtons() {
   }
 }
 if (tg) {
-  tg.MainButton.onClick(() => { hap("tap"); view === "cart" ? submit() : show("cart"); });
+  tg.MainButton.onClick(() => { hap("tap"); view === "cart" ? submit() : $("#sheet").classList.contains("on") ? addFromSheet() : show("cart"); });
   tg.BackButton.onClick(() => { if ($("#sheet").classList.contains("on")) closeSheet(); else show("home"); });
 }
 $("#bar").addEventListener("click", () => show("cart"));
@@ -135,24 +136,37 @@ $$("[data-orders]").forEach(b => b.addEventListener("click", () => { hap("tap");
 })();
 
 /* ---------- витрина ---------- */
-const slideObs = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("in", e.intersectionRatio > .45)), { threshold: [.45] });
+// липкая строка разделов подсвечивает тот, что сейчас в середине экрана
+const chipObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setChip(e.target.id); }), { rootMargin: "-45% 0px -50% 0px" });
+function setChip(id) {
+  const key = id === "make" && mk.mode === "sub" ? "sub" : id;
+  $$("#chips button").forEach(b => {
+    const on = (b.dataset.go || (b.hasAttribute("data-sub") ? "sub" : "")) === key;
+    b.classList.toggle("on", on);
+    if (on) $("#chips").scrollTo({ left: Math.max(0, b.offsetLeft - 20), behavior: "smooth" });
+  });
+}
 const seenObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("seen"); seenObs.unobserve(e.target); } }), { rootMargin: "0px 0px -10% 0px" });
 const stemCard = it => `<button class="sc" data-id="${it.id}"><div class="ph">${pic(it, true)}</div><div class="nm">${it.name}</div><div class="pr">${fmt(it.price)} <small>/ стебель</small></div></button>`;
 const pickCard = b => `<button class="pk" data-id="${b.id}"><div class="ph"><img src="img/${b.img}-t.jpg" alt="" loading="lazy"></div><div class="nm">${b.name}</div><div class="pr">${fmt(b.price)}</div></button>`;
+const bqCard = (b, i) => `<button class="bq" data-id="${b.id}"><div class="ph"><img src="img/${b.img}.jpg" alt="" ${i > 1 ? 'loading="lazy"' : ""}></div><div class="nm">${b.name}</div><p class="compo">${b.sub}</p><div class="pr"><b>${fmt(b.price)}</b><span>${plural(b.n, "стебель", "стебля", "стеблей")}</span></div></button>`;
 function renderHome() {
   $("#hero-img").src = `img/${HERO_IMG}-s.jpg`;
   $("#occ").innerHTML = OCCASIONS.map(o => `<button data-o="${o.id}" class="${occ === o.id ? "on" : ""}">${o.name}</button>`).join("");
   $$("#occ button").forEach(b => b.addEventListener("click", () => { occ = occ === b.dataset.o ? "" : b.dataset.o; try { localStorage.setItem("vento-occ", occ); } catch (e) {} hap(); renderPicks(); }));
   renderPicks();
-  $("#slides").innerHTML = SHOWN_BOUQUETS.map((b, i) => `<section class="slide" id="s-${b.id}"><div class="im"><img src="img/${b.img}-s.jpg" alt="" ${i ? 'loading="lazy"' : ""}></div><div class="ov"></div><div class="tx"><p class="kick">Фирменный букет · ${i + 1} из ${SHOWN_BOUQUETS.length}</p><h2>${b.name}</h2><p class="compo">${b.sub}</p><div class="row"><b>${fmt(b.price)}</b><button class="btn sm" data-id="${b.id}">Заказать</button></div></div></section>`).join("");
-  $$("#slides .slide").forEach(s => slideObs.observe(s));
+  $("#rail-b").innerHTML = SHOWN_BOUQUETS.map(bqCard).join("");
   $("#rail").innerHTML = Object.values(ALL).filter(it => it.shown).map(stemCard).join("");
   $("#p-count").textContent = plural(PRICE.length, "позиция", "позиции", "позиций");
   $("#p-date").textContent = PRICE_DATE;
   $$("section").forEach(s => seenObs.observe(s));
-  renderMaker(); renderSub();
+  $$("[data-chip]").forEach(s => chipObs.observe(s));
+  renderMaker();
   document.body.addEventListener("click", e => { const b = e.target.closest("[data-id]"); if (b && !b.closest("#sheet") && !b.closest(".line") && !b.closest(".ord")) openSheet(b.dataset.id); });
-  $$("[data-go]").forEach(b => b.addEventListener("click", () => { hap(); const t = document.getElementById(b.dataset.go); t && t.scrollIntoView({ behavior: "smooth", block: "start" }); }));
+  const goTo = id => { const t = document.getElementById(id); t && t.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  $$("[data-go]").forEach(b => b.addEventListener("click", () => { hap(); goTo(b.dataset.go); }));
+  $$("[data-sub]").forEach(b => b.addEventListener("click", () => { hap(); mk.mode = "sub"; renderMaker(); goTo("make"); }));
+  $$("#mk-mode button").forEach(b => b.addEventListener("click", () => { if (mk.mode === b.dataset.m) return; mk.mode = b.dataset.m; hap(); renderMaker(true); }));
   $$("[data-view]").forEach(b => b.addEventListener("click", () => { hap("tap"); openPrice(""); }));
   $("#p-q").addEventListener("focus", () => { openPrice(""); setTimeout(() => $("#q").focus(), 60); });
 }
@@ -166,8 +180,8 @@ function renderPicks() {
   box.classList.add("on");
 }
 
-/* ---------- конфигуратор «Собрать свой» ---------- */
-const mk = { pal: "pink", size: "M" };
+/* ---------- конфигуратор «Собрать свой»: один раз или по подписке ---------- */
+const mk = { pal: "pink", size: "M", plan: "14", mode: "once" };
 function calc(palId, sizeId) {
   const pal = PALETTES.find(p => p.id === palId), sz = SIZES.find(s => s.id === sizeId);
   const stems = pal.stems.map(([k, r]) => ({ it: resolve(k), r })).filter(s => s.it);
@@ -182,46 +196,40 @@ function setPic(im, src, fallback) {
   setTimeout(() => { im.onerror = () => { im.onerror = null; im.src = `img/${fallback}.jpg`; }; im.src = `img/${src}.jpg`; im.classList.remove("fade"); }, 160);
 }
 function renderMaker(animate) {
-  const c = calc(mk.pal, mk.size);
+  const c = calc(mk.pal, mk.size), sub = mk.mode === "sub", plan = SUB_PLANS.find(p => p.id === mk.plan);
+  const price = sub ? ceil100(c.price * (1 - SUB_DISCOUNT)) : c.price;
+  $("#make").classList.toggle("sub", sub);
+  $$("#mk-mode button").forEach(b => b.classList.toggle("on", b.dataset.m === mk.mode));
   setPic($("#mk-img"), c.img, c.pal.img);
   $("#mk-pals").innerHTML = PALETTES.map(p => `<button data-p="${p.id}" class="${p.id === mk.pal ? "on" : ""}"><i style="background:${p.tone}"></i>${p.name}</button>`).join("");
   $("#mk-sizes").innerHTML = SIZES.map(s => `<button data-s="${s.id}" class="${s.id === mk.size ? "on" : ""}"><b>${s.id}</b><span>${plural(s.n, "стебель", "стебля", "стеблей")}</span></button>`).join("");
+  $("#mk-plans").innerHTML = SUB_PLANS.map(p => `<button data-pl="${p.id}" class="${p.id === mk.plan ? "on" : ""}">${p.name}</button>`).join("");
   $$("#mk-pals button").forEach(b => b.addEventListener("click", () => { mk.pal = b.dataset.p; hap(); renderMaker(true); }));
   $$("#mk-sizes button").forEach(b => b.addEventListener("click", () => { mk.size = b.dataset.s; hap(); renderMaker(true); }));
-  $("#mk-compo").textContent = `${c.compo} · ${c.sz.h}`;
-  $("#mk-name").textContent = `Букет «${c.pal.name}» ${c.sz.id}`;
-  animate ? countTo($("#mk-price"), c.price) : ($("#mk-price").textContent = fmt(c.price), $("#mk-price").dataset.v = c.price);
+  $$("#mk-plans button").forEach(b => b.addEventListener("click", () => { mk.plan = b.dataset.pl; hap(); renderMaker(true); }));
+  $("#mk-kick").textContent = sub ? `Подписка · −${SUB_DISCOUNT * 100}% к цене букета` : "Собрать свой";
+  $("#mk-name").textContent = `Букет «${c.pal.name}» ${c.sz.id}`;
+  $("#mk-compo").textContent = `${c.compo} · ${sub ? plan.name.toLowerCase() : c.sz.h}`;
+  $("#mk-was").textContent = fmt(c.price);
+  $("#mk-add").textContent = sub ? "Оформить подписку" : "В корзину";
+  $("#mk-hint").textContent = sub ? "Цена за каждую доставку. Первую выберите при оформлении, дальше привозим по графику и накануне спрашиваем, всё ли в силе." : "Цена считается по сегодняшнему прайсу. Состав и оттенок подтвердит флорист.";
+  animate ? countTo($("#mk-price"), price) : ($("#mk-price").textContent = fmt(price), $("#mk-price").dataset.v = price);
 }
 $("#mk-add").addEventListener("click", () => {
-  const c = calc(mk.pal, mk.size), id = `M-${c.pal.id}-${c.sz.id}`;
+  const c = calc(mk.pal, mk.size);
+  if (mk.mode === "sub") {
+    const plan = SUB_PLANS.find(p => p.id === mk.plan), price = ceil100(c.price * (1 - SUB_DISCOUNT));
+    const id = `SUB-${c.pal.id}-${c.sz.id}-${plan.id}`;
+    CUSTOM[id] = { id, kind: "custom", name: `Подписка «${c.pal.name}» ${c.sz.id}`, sub: `${plan.name}: ${c.compo}`, price, img: c.img, fallback: c.pal.img, tone: c.pal.tone, compo: c.compo, n: c.sz.n, every: plan.days,
+      text: `Букет ${plan.name.toLowerCase()}: ${c.compo}. Первую доставку выберите при оформлении, дальше привозим по графику, напоминаем накануне.` };
+    Object.keys(cart).forEach(k => { if (k.startsWith("SUB-")) delete cart[k]; });
+    setQty(id, 1); hap("ok"); toast("Подписка в корзине"); show("cart");
+    return;
+  }
+  const id = `M-${c.pal.id}-${c.sz.id}`;
   CUSTOM[id] = { id, kind: "custom", name: `Букет «${c.pal.name}» ${c.sz.id}`, sub: `${plural(c.sz.n, "стебель", "стебля", "стеблей")}: ${c.compo}`, price: c.price, img: c.img, fallback: c.pal.img, tone: c.pal.tone, compo: c.compo, n: c.sz.n,
     text: `Собран под вас: ${c.compo}. Высота ${c.sz.h}. Наличие и оттенок подтвердим при заказе.` };
   setQty(id, (cart[id] || 0) + 1); hap("ok"); toast("Букет в корзине");
-});
-
-/* ---------- подписка ---------- */
-const sb = { pal: "white", size: "M", plan: "14" };
-function renderSub(animate) {
-  const c = calc(sb.pal, sb.size), plan = SUB_PLANS.find(p => p.id === sb.plan);
-  const price = ceil100(c.price * (1 - SUB_DISCOUNT));
-  setPic($("#sb-img"), c.img, c.pal.img);
-  $("#sb-pals").innerHTML = PALETTES.map(p => `<button data-p="${p.id}" class="${p.id === sb.pal ? "on" : ""}"><i style="background:${p.tone}"></i>${p.name}</button>`).join("");
-  $("#sb-sizes").innerHTML = SIZES.map(s => `<button data-s="${s.id}" class="${s.id === sb.size ? "on" : ""}"><b>${s.id}</b><span>${plural(s.n, "стебель", "стебля", "стеблей")}</span></button>`).join("");
-  $("#sb-plans").innerHTML = SUB_PLANS.map(p => `<button data-pl="${p.id}" class="${p.id === sb.plan ? "on" : ""}">${p.name}</button>`).join("");
-  $$("#sb-pals button").forEach(b => b.addEventListener("click", () => { sb.pal = b.dataset.p; hap(); renderSub(true); }));
-  $$("#sb-sizes button").forEach(b => b.addEventListener("click", () => { sb.size = b.dataset.s; hap(); renderSub(true); }));
-  $$("#sb-plans button").forEach(b => b.addEventListener("click", () => { sb.plan = b.dataset.pl; hap(); renderSub(true); }));
-  $("#sb-compo").textContent = `${c.compo} · ${plan.name.toLowerCase()} · −${SUB_DISCOUNT * 100}% к цене букета`;
-  animate ? countTo($("#sb-price"), price) : ($("#sb-price").textContent = fmt(price), $("#sb-price").dataset.v = price);
-  $("#sb-was").textContent = fmt(c.price);
-}
-$("#sb-add").addEventListener("click", () => {
-  const c = calc(sb.pal, sb.size), plan = SUB_PLANS.find(p => p.id === sb.plan), price = ceil100(c.price * (1 - SUB_DISCOUNT));
-  const id = `SUB-${c.pal.id}-${c.sz.id}-${plan.id}`;
-  CUSTOM[id] = { id, kind: "custom", name: `Подписка «${c.pal.name}» ${c.sz.id}`, sub: `${plan.name}: ${c.compo}`, price, img: c.img, fallback: c.pal.img, tone: c.pal.tone, compo: c.compo, n: c.sz.n, every: plan.days,
-    text: `Букет ${plan.name.toLowerCase()}: ${c.compo}. Первую доставку выберите при оформлении, дальше привозим по графику, напоминаем накануне.` };
-  Object.keys(cart).forEach(k => { if (k.startsWith("SUB-")) delete cart[k]; });
-  setQty(id, 1); hap("ok"); toast("Подписка в корзине"); show("cart");
 });
 
 /* ---------- весь прайс: поиск и разделы ---------- */
@@ -297,15 +305,17 @@ function paintQty(instant) {
   $$("#presets button").forEach(b => b.classList.toggle("on", +b.dataset.p === qty));
   instant ? ($("#sh-sum").textContent = fmt(cur.price * qty)) : countTo($("#sh-sum"), cur.price * qty);
   $("#sh-sum-l").textContent = cur.kind === "stem" ? `${plural(qty, "стебель", "стебля", "стеблей")} × ${fmt(cur.price)}` : cur.every ? "за каждую доставку" : plural(qty, "букет", "букета", "букетов");
+  syncButtons();
 }
 function closeSheet() { $("#sheet").classList.remove("on"); document.body.style.overflow = ""; syncButtons(); }
-$("#sh-minus").addEventListener("click", () => { if (qty > 1) { qty--; hap(); paintQty(); } });
-$("#sh-plus").addEventListener("click", () => { qty++; hap(); paintQty(); });
-$("#sh-add").addEventListener("click", () => {
-  const it = cur; setQty(it.id, qty); hap("ok"); closeSheet();
+function addFromSheet() {
+  const it = cur; if (!it) return; setQty(it.id, qty); hap("ok"); closeSheet();
   toast(it.kind === "stem" ? `В корзине ${plural(stemsCount(), "стебель", "стебля", "стеблей")}` : "Букет в корзине");
   if (view === "price") renderPrice();
-});
+}
+$("#sh-minus").addEventListener("click", () => { if (qty > 1) { qty--; hap(); paintQty(); } });
+$("#sh-plus").addEventListener("click", () => { qty++; hap(); paintQty(); });
+$("#sh-add").addEventListener("click", addFromSheet);
 $("#sh-x").addEventListener("click", closeSheet);
 $("#sheet .sheet-bg").addEventListener("click", closeSheet);
 let tt; function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("on"), 1800); }
@@ -419,5 +429,4 @@ async function submit() {
 /* ---------- старт ---------- */
 renderHome();
 setQty("", 0);
-document.documentElement.classList.add("snap");
 repeatFromParam();
