@@ -156,6 +156,7 @@ function renderHome() {
   $$("#occ button").forEach(b => b.addEventListener("click", () => { occ = occ === b.dataset.o ? "" : b.dataset.o; try { localStorage.setItem("vento-occ", occ); } catch (e) {} hap(); renderPicks(); }));
   renderPicks();
   $("#rail-b").innerHTML = SHOWN_BOUQUETS.map(bqCard).join("");
+  $("#tile-bq-n").textContent = plural(SHOWN_BOUQUETS.length, "фирменный", "фирменных", "фирменных");
   $("#rail").innerHTML = Object.values(ALL).filter(it => it.shown).map(stemCard).join("");
   $("#p-count").textContent = plural(PRICE.length, "позиция", "позиции", "позиций");
   $("#p-date").textContent = PRICE_DATE;
